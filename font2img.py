@@ -164,7 +164,7 @@ def font2font(src, dst, charset, char_size, canvas_size,
 
 
 def font2imgs(src, dst, char_size, canvas_size,
-              x_offset, y_offset, sample_count, sample_dir):
+              x_offset, y_offset, sample_count, sample_dir, label):
     src_font = ImageFont.truetype(src, size=char_size)
 
     # -*- You should fill the target imgs' label_map -*-
@@ -186,7 +186,7 @@ def font2imgs(src, dst, char_size, canvas_size,
         res = re.match(pattern, c)
         ch = res[1]
         # writter = res[2]
-        label = 20 # writer_dict[writter]
+        # label = writer_dict[writter]
         img_path = os.path.join(dst, c)
         dst_img = Image.open(img_path)
         e = draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offset)
@@ -350,7 +350,7 @@ if __name__ == "__main__":
             raise ValueError('src_font and dst_imgs are required.')
         font2imgs(args.src_font, args.dst_imgs, args.char_size,
                   args.canvas_size, args.x_offset, args.y_offset,
-                  args.sample_count, args.sample_dir)
+                  args.sample_count, args.sample_dir, args.label)
     elif args.mode == 'fonts2imgs':
         if args.src_fonts_dir is None or args.dst_imgs is None:
             raise ValueError('src_font and dst_imgs are required.')
