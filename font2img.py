@@ -4,6 +4,7 @@ import os
 import sys
 
 import argparse
+from typing import Type
 import numpy as np
 
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
@@ -184,7 +185,10 @@ def font2imgs(src, dst, char_size, canvas_size,
         if count == sample_count:
             break
         res = re.match(pattern, c)
-        ch = res[1]
+        try:
+            ch = res[1]
+        except TypeError:
+            print(c)
         # writter = res[2]
         # label = writer_dict[writter]
         img_path = os.path.join(dst, c)
