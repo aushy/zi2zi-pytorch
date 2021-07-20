@@ -6,7 +6,7 @@ import sys
 import argparse
 import numpy as np
 
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 import json
 import collections
 import re
@@ -96,7 +96,7 @@ def draw_font2font_example(ch, src_font, dst_font, canvas_size, x_offset, y_offs
     return example_img
 
 
-def draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offset):
+def draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offset, thresh=230):
     src_img = draw_single_char(ch, src_font, canvas_size, x_offset, y_offset)
     dst_img = dst_img.resize((canvas_size, canvas_size), Image.ANTIALIAS).convert('RGB')
     example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
@@ -104,6 +104,13 @@ def draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offse
     example_img.paste(src_img, (canvas_size, 0))
     # convert to gray img
     example_img = example_img.convert('L')
+    # preprocess
+    contrast = ImageEnhance.Contrast(example_img) # Add contrast
+    example_img = contrast.enhance(2.0)
+    brightness = ImageEnhance.Brightness(example_img) # Add brightness
+    example_img = brightness.enhance(1.3)
+    fn = lambda x : 255 if x > thresh else 0 # Binarize
+    example_img = example_img.convert('L').point(fn, mode='1')
     return example_img
 
 
@@ -171,15 +178,15 @@ def font2imgs(src, dst, char_size, canvas_size,
     count = 0
 
     # -*- You should fill the target imgs' regular expressions. -*-
-    pattern = re.compile('(.)~(.+)~(\d+)')
+    pattern = re.compile('(.)_(\d+)') # '(.)~(.+)~(\d+)'
 
     for c in tqdm(os.listdir(dst)):
         if count == sample_count:
             break
         res = re.match(pattern, c)
         ch = res[1]
-        writter = res[2]
-        label = writer_dict[writter]
+        # writter = res[2]
+        label = 20 # writer_dict[writter]
         img_path = os.path.join(dst, c)
         dst_img = Image.open(img_path)
         e = draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offset)
