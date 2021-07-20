@@ -110,8 +110,8 @@ def draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offse
     example_img = contrast.enhance(2.0)
     brightness = ImageEnhance.Brightness(example_img) # Add brightness
     example_img = brightness.enhance(1.3)
-    fn = lambda x : 255 if x > thresh else 0 # Binarize
-    example_img = example_img.convert('L').point(fn, mode='1')
+    # fn = lambda x : 255 if x > thresh else 0 # Binarize
+    # example_img = example_img.convert('L').point(fn, mode='1')
     return example_img
 
 
