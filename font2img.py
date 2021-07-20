@@ -181,7 +181,7 @@ def font2imgs(src, dst, char_size, canvas_size,
     # -*- You should fill the target imgs' regular expressions. -*-
     pattern = re.compile('(.)_(\d+)') # '(.)~(.+)~(\d+)'
 
-    for c in tqdm(os.listdir(dst)):
+    for c in tqdm([x for x in os.listdir(dst) if not x.startswith('.')]):
         if count == sample_count:
             break
         res = re.match(pattern, c)
