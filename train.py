@@ -69,9 +69,10 @@ def main():
     # dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
     if args.inst_norm:
-        print("Using instance normalization...")
+        print("\n\n\n***\nUsing instance normalization...\n***\n\n\n")
         normlayer = nn.InstanceNorm2d
     else:
+        print("\n\n\n***\nUsing batch normalization...\n***\n\n\n")
         normlayer = nn.BatchNorm2d
 
     model = Zi2ZiModel(
