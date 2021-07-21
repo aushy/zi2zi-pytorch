@@ -1,5 +1,6 @@
 from data import DatasetFromObj
 from torch.utils.data import DataLoader
+import torch.nn as nn
 from model import Zi2ZiModel
 import os
 import sys
@@ -67,6 +68,12 @@ def main():
     # val_dataset = DatasetFromObj(os.path.join(data_dir, 'val.obj'))
     # dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
+    if args.inst_norm:
+        print("Using instance normalization...")
+        normlayer = nn.InstanceNorm2d
+    else:
+        normlayer = nn.BatchNorm2d
+
     model = Zi2ZiModel(
         input_nc=args.input_nc,
         embedding_num=args.embedding_num,
@@ -74,7 +81,8 @@ def main():
         Lconst_penalty=args.Lconst_penalty,
         Lcategory_penalty=args.Lcategory_penalty,
         save_dir=checkpoint_dir,
-        gpu_ids=args.gpu_ids
+        gpu_ids=args.gpu_ids,
+        norm_layer=normlayer
     )
     model.setup()
     model.print_networks(True)

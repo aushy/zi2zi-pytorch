@@ -14,7 +14,7 @@ class Zi2ZiModel:
                  ngf=64, ndf=64,
                  Lconst_penalty=15, Lcategory_penalty=1, L1_penalty=100,
                  schedule=10, lr=0.001, gpu_ids=None, save_dir='.', is_training=True,
-                 image_size=256):
+                 image_size=256, norm_layer=nn.BatchNorm2d):
 
         if is_training:
             self.use_dropout = True
@@ -39,6 +39,8 @@ class Zi2ZiModel:
         self.is_training = is_training
         self.image_size = image_size
 
+        self.norm_layer = norm_layer
+
     def setup(self):
 
         self.netG = UNetGenerator(
@@ -47,7 +49,8 @@ class Zi2ZiModel:
             embedding_num=self.embedding_num,
             embedding_dim=self.embedding_dim,
             ngf=self.ngf,
-            use_dropout=self.use_dropout
+            use_dropout=self.use_dropout,
+            norm_layer=self.norm_layer
         )
         self.netD = Discriminator(
             input_nc=2 * self.input_nc,
