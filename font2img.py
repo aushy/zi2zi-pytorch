@@ -14,6 +14,8 @@ import re
 from fontTools.ttLib import TTFont
 from tqdm import tqdm
 import random
+from itertools import chain
+from fontTools.unicode import Unicode
 
 from torch import nn
 from torchvision import transforms
