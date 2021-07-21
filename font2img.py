@@ -28,6 +28,13 @@ KR_CHARSET = None
 DEFAULT_CHARSET = "./charset/cjk.json"
 
 
+def get_unicode_coverage_from_ttf(ttf_path):
+    with TTFont(ttf_path, 0, allowVID=0, ignoreDecompileErrors=True, fontNumber=-1) as ttf:
+        chars = chain.from_iterable([y + (Unicode[y[0]],) for y in x.cmap.items()] for x in ttf["cmap"].tables)
+        chars_dec = [x[0] for x in chars]
+        return chars_dec, [chr(x) for x in chars_dec]
+
+
 def load_global_charset():
     global CN_CHARSET, JP_CHARSET, KR_CHARSET, CN_T_CHARSET
     cjk = json.load(open(DEFAULT_CHARSET))
@@ -142,9 +149,19 @@ def filter_recurring_hash(charset, font, canvas_size, x_offset, y_offset):
 
 
 def font2font(src, dst, charset, char_size, canvas_size,
-             x_offset, y_offset, sample_count, sample_dir, label=0, filter_by_hash=True):
+             x_offset, y_offset, sample_count, sample_dir, label=0, filter_by_hash=True, 
+             custom_charset=False):
+    
     src_font = ImageFont.truetype(src, size=char_size)
     dst_font = ImageFont.truetype(dst, size=char_size)
+
+    if custom_charset:
+        # full coverage
+        kanji_unicode_range = range(int(0x4e00), int(0x9faf)+1)
+        _, dst_chars = get_unicode_coverage_from_ttf(dst)
+        dst_chars_kanji = [c for c in dst_chars if ((ord(c) in kanji_unicode_range) or (c in charset))]
+        print(f"Total kanji or charset in this font: {len(dst_chars_kanji)}")
+        charset = dst_chars_kanji
 
     filter_hashes = set()
     if filter_by_hash:
@@ -153,7 +170,7 @@ def font2font(src, dst, charset, char_size, canvas_size,
 
     count = 0
 
-    for c in charset:
+    for c in random.sample(charset, len(charset)):
         if count == sample_count:
             break
         e = draw_font2font_example(c, src_font, dst_font, canvas_size, x_offset, y_offset, filter_hashes)
@@ -342,13 +359,17 @@ if __name__ == "__main__":
             raise ValueError('src_font and dst_font are required.')
         if args.charset in ['CN', 'JP', 'KR', 'CN_T']:
             charset = locals().get("%s_CHARSET" % args.charset)
+            custom_charset = False
         else:
-            charset = list(open(args.charset, encoding='utf-8').readline().strip())
+            with open(args.charset) as f:
+                charset = f.read().split()
+            custom_charset = True
         if args.shuffle:
             np.random.shuffle(charset)
         font2font(args.src_font, args.dst_font, charset, args.char_size,
                   args.canvas_size, args.x_offset, args.y_offset,
-                  args.sample_count, args.sample_dir, args.label, args.filter)
+                  args.sample_count, args.sample_dir, args.label, args.filter, 
+                  custom_charset)
     elif args.mode == 'font2imgs':
         if args.src_font is None or args.dst_imgs is None:
             raise ValueError('src_font and dst_imgs are required.')
