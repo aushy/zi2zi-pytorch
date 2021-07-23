@@ -144,7 +144,7 @@ def main():
         else:
             # model.set_input(batch[0], batch[2], batch[1])
             # model.optimize_parameters()
-            model.set_input(torch.ones_like(batch[0]) * label_idx, batch[2], batch[1])
+            model.set_input(batch[0], batch[2], batch[1])
             model.forward()
             tensor_to_plot = torch.cat([model.fake_B, model.real_B], 3)
             save_image(tensor_to_plot, os.path.join(infer_dir, "infer_{}".format(writer_dict_inv[label_idx]) + "_construct.png"))
