@@ -114,6 +114,9 @@ def main():
         ).unsqueeze(dim=0) for ch in src]
         label_list = [args.label for _ in src]
 
+        print(batch[2].size())
+        transforms.ToPILImage()(img_list[0][0].squeeze_(0)).save("./debug.png")
+
         img_list = torch.cat(img_list, dim=0)
         label_list = torch.tensor(label_list)
 
@@ -145,8 +148,6 @@ def main():
             # model.set_input(batch[0], batch[2], batch[1])
             # model.optimize_parameters()
             model.set_input(batch[0], batch[2], batch[1])
-            print(batch[2].size())
-            transforms.ToPILImage()(batch[2][0].squeeze_(0)).save("./debug.png")
             model.forward()
             tensor_to_plot = torch.cat([model.fake_B, model.real_B], 3)
             save_image(tensor_to_plot, os.path.join(infer_dir, "infer_{}".format(9) + "_construct.png"))
