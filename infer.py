@@ -107,11 +107,12 @@ def main():
     if args.from_txt:
         src = args.src_txt
         font = ImageFont.truetype(args.src_font, size=args.char_size)
-        img_list = [transforms.Normalize(0.5, 0.5)(
+        """img_list = [transforms.Normalize(0.5, 0.5)(
             transforms.ToTensor()(
                 draw_single_char(ch, font, args.canvas_size)
             )
-        ).unsqueeze(dim=0) for ch in src]
+        ).unsqueeze(dim=0) for ch in src]"""
+        img_list = [transforms.ToTensor()(draw_single_char(ch, font, args.canvas_size)).unsqueeze_(0) for ch in src]
         label_list = [args.label for _ in src]
 
         img_list = torch.cat(img_list, dim=0)
