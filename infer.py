@@ -145,7 +145,7 @@ def main():
             # model.set_input(batch[0], batch[2], batch[1])
             # model.optimize_parameters()
             model.set_input(batch[0], batch[2], batch[1])
-            print(model.fake_B.size())
+            print(batch[2].size())
             transforms.ToPILImage()(batch[2][0].squeeze_(0)).save("./debug.png")
             model.forward()
             tensor_to_plot = torch.cat([model.fake_B, model.real_B], 3)
