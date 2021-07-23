@@ -114,7 +114,7 @@ def main():
         ).unsqueeze(dim=0) for ch in src]
         label_list = [args.label for _ in src]
 
-        print(batch[2].size())
+        print(img_list[0].size())
         transforms.ToPILImage()(img_list[0][0].squeeze_(0)).save("./debug.png")
 
         img_list = torch.cat(img_list, dim=0)
