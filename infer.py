@@ -13,6 +13,7 @@ import torchvision.transforms as transforms
 from torchvision.utils import save_image, make_grid
 import time
 from model.model import chk_mkdir
+import torch.nn as nn
 
 writer_dict = {
         '智永': 0, ' 隸書-趙之謙': 1, '張即之': 2, '張猛龍碑': 3, '柳公權': 4, '標楷體-手寫': 5, '歐陽詢-九成宮': 6,
@@ -53,6 +54,9 @@ parser.add_argument('--label', type=int, default=0)
 parser.add_argument('--src_font', type=str, default='charset/gbk/方正新楷体_GBK(完整).TTF')
 parser.add_argument('--type_file', type=str, default='type/宋黑类字符集.txt')
 
+parser.add_argument('--inst_norm', action='store_true',
+                    help='use conditional instance normalization in your model')
+
 
 def draw_single_char(ch, font, canvas_size):
     img = Image.new("RGB", (canvas_size, canvas_size), (255, 255, 255))
@@ -76,6 +80,13 @@ def main():
 
     t0 = time.time()
 
+    if args.inst_norm:
+        print("\n\n\n***\nUsing instance normalization...\n***\n\n\n")
+        normlayer = nn.InstanceNorm2d
+    else:
+        print("\n\n\n***\nUsing batch normalization...\n***\n\n\n")
+        normlayer = nn.BatchNorm2d
+
     model = Zi2ZiModel(
         input_nc=args.input_nc,
         embedding_num=args.embedding_num,
@@ -84,7 +95,8 @@ def main():
         Lcategory_penalty=args.Lcategory_penalty,
         save_dir=checkpoint_dir,
         gpu_ids=args.gpu_ids,
-        is_training=False
+        is_training=False,
+        norm_layer=normlayer
     )
     model.setup()
     model.print_networks(True)
