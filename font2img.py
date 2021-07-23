@@ -322,10 +322,11 @@ def imgs2imgs(src, dst, canvas_size, sample_count, sample_dir):
             e.save(os.path.join(sample_dir, "%d_%04d.jpg" % (label, count)))
             count += 1
 
+if __name__ == "__main__":
 
-load_global_charset()
-parser = argparse.ArgumentParser()
-parser.add_argument('--mode', type=str, choices=['imgs2imgs', 'font2imgs', 'font2font', 'fonts2imgs'], required=True,
+    load_global_charset()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', type=str, choices=['imgs2imgs', 'font2imgs', 'font2font', 'fonts2imgs'], required=True,
                     help='generate mode.\n'
                          'use --src_imgs and --dst_imgs for imgs2imgs mode.\n'
                          'use --src_font and --dst_imgs for font2imgs mode.\n'
@@ -333,27 +334,26 @@ parser.add_argument('--mode', type=str, choices=['imgs2imgs', 'font2imgs', 'font
                          'use --src_fonts_dir and --dst_imgs for fonts2imgs mode.\n'
                          'No imgs2font mode.'
                     )
-parser.add_argument('--src_font', type=str, default=None, help='path of the source font')
-parser.add_argument('--src_fonts_dir', type=str, default=None, help='path of the source fonts')
-parser.add_argument('--src_imgs', type=str, default=None, help='path of the source imgs')
-parser.add_argument('--dst_font', type=str, default=None, help='path of the target font')
-parser.add_argument('--dst_imgs', type=str, default=None, help='path of the target imgs')
+    parser.add_argument('--src_font', type=str, default=None, help='path of the source font')
+    parser.add_argument('--src_fonts_dir', type=str, default=None, help='path of the source fonts')
+    parser.add_argument('--src_imgs', type=str, default=None, help='path of the source imgs')
+    parser.add_argument('--dst_font', type=str, default=None, help='path of the target font')
+    parser.add_argument('--dst_imgs', type=str, default=None, help='path of the target imgs')
 
-parser.add_argument('--filter', default=False, action='store_true', help='filter recurring characters')
-parser.add_argument('--charset', type=str, default='CN',
+    parser.add_argument('--filter', default=False, action='store_true', help='filter recurring characters')
+    parser.add_argument('--charset', type=str, default='CN',
                     help='charset, can be either: CN, JP, KR or a one line file. ONLY VALID IN font2font mode.')
-parser.add_argument('--shuffle', default=False, action='store_true', help='shuffle a charset before processings')
-parser.add_argument('--char_size', type=int, default=256, help='character size')
-parser.add_argument('--canvas_size', type=int, default=256, help='canvas size')
-parser.add_argument('--x_offset', type=int, default=0, help='x offset')
-parser.add_argument('--y_offset', type=int, default=0, help='y_offset')
-parser.add_argument('--sample_count', type=int, default=5000, help='number of characters to draw')
-parser.add_argument('--sample_dir', type=str, default='sample_dir', help='directory to save examples')
-parser.add_argument('--label', type=int, default=0, help='label as the prefix of examples')
+    parser.add_argument('--shuffle', default=False, action='store_true', help='shuffle a charset before processings')
+    parser.add_argument('--char_size', type=int, default=256, help='character size')
+    parser.add_argument('--canvas_size', type=int, default=256, help='canvas size')
+    parser.add_argument('--x_offset', type=int, default=0, help='x offset')
+    parser.add_argument('--y_offset', type=int, default=0, help='y_offset')
+    parser.add_argument('--sample_count', type=int, default=5000, help='number of characters to draw')
+    parser.add_argument('--sample_dir', type=str, default='sample_dir', help='directory to save examples')
+    parser.add_argument('--label', type=int, default=0, help='label as the prefix of examples')
 
-args = parser.parse_args()
+    args = parser.parse_args()
 
-if __name__ == "__main__":
     if not os.path.isdir(args.sample_dir):
         os.mkdir(args.sample_dir)
     if args.mode == 'font2font':
