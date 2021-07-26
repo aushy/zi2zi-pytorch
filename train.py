@@ -1,6 +1,7 @@
 from data import DatasetFromObj
 from torch.utils.data import DataLoader
 import torch.nn as nn
+from torch.nn.utils import spectral_norm
 from model import Zi2ZiModel
 import os
 import sys
@@ -33,7 +34,9 @@ parser.add_argument('--freeze_encoder', action='store_true',
 parser.add_argument('--fine_tune', type=str, default=None,
                     help='specific labels id to be fine tuned')
 parser.add_argument('--inst_norm', action='store_true',
-                    help='use conditional instance normalization in your model')
+                    help='use conditional instance normalization in your model generator')
+parser.add_argument('--spec_norm', action='store_true',
+                    help='use spectral normalization in your model discriminator')
 parser.add_argument('--sample_steps', type=int, default=10,
                     help='number of batches in between two samples are drawn from validation set')
 parser.add_argument('--checkpoint_steps', type=int, default=100,
@@ -69,11 +72,18 @@ def main():
     # dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
     if args.inst_norm:
-        print("\n\n\n***\nUsing instance normalization...\n***\n\n\n")
-        normlayer = nn.InstanceNorm2d
+        print("\n\n\n***\nGenerator using instance normalization...\n***\n\n\n")
+        g_norm_layer = nn.InstanceNorm2d
     else:
-        print("\n\n\n***\nUsing batch normalization...\n***\n\n\n")
-        normlayer = nn.BatchNorm2d
+        print("\n\n\n***\nGenerator using batch normalization...\n***\n\n\n")
+        g_norm_layer = nn.BatchNorm2d
+
+    if args.spec_norm:
+        print("\n\n\n***\nDiscriminator using spectral normalization...\n***\n\n\n")
+        d_norm_layer = spectral_norm
+    else:
+        print("\n\n\n***\nDiscriminator using batch normalization...\n***\n\n\n")
+        d_norm_layer = nn.BatchNorm2d
 
     model = Zi2ZiModel(
         input_nc=args.input_nc,
@@ -83,7 +93,8 @@ def main():
         Lcategory_penalty=args.Lcategory_penalty,
         save_dir=checkpoint_dir,
         gpu_ids=args.gpu_ids,
-        norm_layer=normlayer
+        g_norm_layer=g_norm_layer,
+        d_norm_layer=d_norm_layer
     )
     model.setup()
     model.print_networks(True)
