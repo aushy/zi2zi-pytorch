@@ -57,14 +57,12 @@ class Discriminator(nn.Module):
         nf_mult_prev = nf_mult
         nf_mult = 8
         if spec_norm:
-            print("Using spectral normalization...")
             sequence += [
                 spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias)),
                 norm_layer(ndf * nf_mult),
                 nn.LeakyReLU(0.2, True)
             ]
         else:
-            print("NOT using spectral normalization...")
             sequence += [
                 nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias),
                 norm_layer(ndf * nf_mult),

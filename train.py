@@ -71,15 +71,17 @@ def main():
     # dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
     if args.inst_norm:
-        print("\n\n\n***\nGenerator using instance normalization...\n***\n\n\n")
+        print("***\nGenerator using instance normalization...\n***")
         g_norm_layer = nn.InstanceNorm2d
     else:
-        print("\n\n\n***\nGenerator using batch normalization...\n***\n\n\n")
+        print("***\nGenerator using batch normalization...\n***")
         g_norm_layer = nn.BatchNorm2d
 
     if args.spec_norm:
+        print("***\nUsing spectral normalization...\n***")
         d_spec_norm = True
     else:
+        print("***\nNOT using spectral normalization...\n***")
         d_spec_norm = False
 
     model = Zi2ZiModel(
