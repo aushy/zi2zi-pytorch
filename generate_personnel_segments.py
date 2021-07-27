@@ -25,37 +25,39 @@ def generate_characters(
     checkpoint_dir = os.path.join(experiment_dir, "checkpoint")
     chk_mkdir(infer_dir)
 
-    # set up 
-    model = Zi2ZiModel(
-        input_nc=1,
-        embedding_num=40,
-        embedding_dim=128,
-        Lconst_penalty=15,
-        Lcategory_penalty=100,
-        save_dir=checkpoint_dir,
-        gpu_ids="cuda:0",
-        g_norm_layer=nn.InstanceNorm2d,
-        d_spec_norm=False,
-        is_training=False
-    )
+    # model
+    with torch.no_grad():
+        
+        # set up 
+        model = Zi2ZiModel(
+            input_nc=1,
+            embedding_num=40,
+            embedding_dim=128,
+            Lconst_penalty=15,
+            Lcategory_penalty=100,
+            save_dir=checkpoint_dir,
+            gpu_ids="cuda:0",
+            g_norm_layer=nn.InstanceNorm2d,
+            d_spec_norm=False,
+            is_training=False
+        )
+        model.setup()
+        model.print_networks(True)
+        model.load_networks(resume_iter)
 
-    model.setup()
-    model.print_networks(True)
-    model.load_networks(resume_iter)
-
-    # data prep
-    src = src_txt
-    font = ImageFont.truetype(src_font_path, size=256)
-    img_list = [transforms.Normalize(0.5, 0.5)(transforms.ToTensor()(draw_single_char(ch, font, 256))).unsqueeze(dim=0) for ch in src]
-    label_list = [label for _ in src]
-    img_list = torch.cat(img_list, dim=0)
-    label_list = torch.tensor(label_list)
-    dataset = TensorDataset(label_list, img_list, img_list)
-    dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
-    
-    # inference
-    for batch in dataloader:
-        model.sample(batch, infer_dir)
+        # data prep
+        src = src_txt
+        font = ImageFont.truetype(src_font_path, size=256)
+        img_list = [transforms.Normalize(0.5, 0.5)(transforms.ToTensor()(draw_single_char(ch, font, 256))).unsqueeze(dim=0) for ch in src]
+        label_list = [label for _ in src]
+        img_list = torch.cat(img_list, dim=0)
+        label_list = torch.tensor(label_list)
+        dataset = TensorDataset(label_list, img_list, img_list)
+        dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
+        
+        # inference
+        for batch in dataloader:
+            model.sample(batch, infer_dir)
 
 if __name__ == '__main__':
     
