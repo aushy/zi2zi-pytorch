@@ -7,7 +7,6 @@ import os
 from torch.optim.lr_scheduler import StepLR
 from utils.init_net import init_net
 import torchvision.utils as vutils
-from torch.nn.utils import spectral_norm
 
 
 class Zi2ZiModel:
@@ -15,7 +14,10 @@ class Zi2ZiModel:
                  ngf=64, ndf=64,
                  Lconst_penalty=15, Lcategory_penalty=1, L1_penalty=100,
                  schedule=10, lr=0.001, gpu_ids=None, save_dir='.', is_training=True,
-                 image_size=256, g_norm_layer=nn.BatchNorm2d, d_norm_layer=nn.BatchNorm2d):
+                 image_size=256, 
+                 g_norm_layer=nn.BatchNorm2d, 
+                 d_norm_layer=nn.BatchNorm2d,
+                 d_spec_norm=False):
 
         if is_training:
             self.use_dropout = True
@@ -42,6 +44,7 @@ class Zi2ZiModel:
 
         self.g_norm_layer = g_norm_layer
         self.d_norm_layer = d_norm_layer
+        self.d_spec_norm = d_spec_norm
 
     def setup(self):
 
@@ -59,7 +62,8 @@ class Zi2ZiModel:
             embedding_num=self.embedding_num,
             ndf=self.ndf,
             image_size=self.image_size,
-            norm_layer=self.d_norm_layer
+            norm_layer=self.d_norm_layer,
+            spec_norm=self.d_spec_norm
         )
 
         init_net(self.netG, gpu_ids=self.gpu_ids)
