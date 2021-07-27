@@ -57,6 +57,8 @@ parser.add_argument('--type_file', type=str, default='type/宋黑类字符集.tx
 
 parser.add_argument('--inst_norm', action='store_true',
                     help='use conditional instance normalization in your model')
+parser.add_argument('--spec_norm', action='store_true',
+                    help='use spectral normalization in your model discriminator')
 
 """
 def draw_single_char(ch, font, canvas_size):
@@ -82,11 +84,18 @@ def main():
     t0 = time.time()
 
     if args.inst_norm:
-        print("\n\n\n***\nUsing instance normalization...\n***\n\n\n")
-        normlayer = nn.InstanceNorm2d
+        print("***\nUsing instance normalization...\n***")
+        g_norm_layer = nn.InstanceNorm2d
     else:
-        print("\n\n\n***\nUsing batch normalization...\n***\n\n\n")
-        normlayer = nn.BatchNorm2d
+        print("***\nUsing batch normalization...\n***")
+        g_norm_layer = nn.BatchNorm2d
+
+    if args.spec_norm:
+        print("***\nUsing spectral normalization...\n***")
+        d_spec_norm = True
+    else:
+        print("***\nNOT using spectral normalization...\n***")
+        d_spec_norm = False
 
     model = Zi2ZiModel(
         input_nc=args.input_nc,
@@ -96,8 +105,9 @@ def main():
         Lcategory_penalty=args.Lcategory_penalty,
         save_dir=checkpoint_dir,
         gpu_ids=args.gpu_ids,
-        is_training=False,
-        norm_layer=normlayer
+        g_norm_layer=g_norm_layer,
+        d_spec_norm=d_spec_norm,
+        is_training=False
     )
     model.setup()
     model.print_networks(True)
