@@ -1,6 +1,5 @@
 from font2img import draw_single_char
 from model import Zi2ZiModel
-from model.model import chk_mkdir
 
 from PIL import Image, ImageDraw, ImageFont
 import torchvision.transforms as transforms
@@ -23,11 +22,11 @@ def generate_characters(
 
     # set up directories
     checkpoint_dir = os.path.join(experiment_dir, "checkpoint")
-    chk_mkdir(infer_dir)
+    os.makedirs(infer_dir, exist_ok=True)
 
     # model
     with torch.no_grad():
-        
+
         # set up 
         model = Zi2ZiModel(
             input_nc=1,
