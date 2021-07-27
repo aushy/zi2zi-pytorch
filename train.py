@@ -77,6 +77,11 @@ def main():
         print("\n\n\n***\nGenerator using batch normalization...\n***\n\n\n")
         g_norm_layer = nn.BatchNorm2d
 
+    if args.spec_norm:
+        d_spec_norm = True
+    else:
+        d_spec_norm = False
+
     model = Zi2ZiModel(
         input_nc=args.input_nc,
         embedding_num=args.embedding_num,
@@ -86,7 +91,7 @@ def main():
         save_dir=checkpoint_dir,
         gpu_ids=args.gpu_ids,
         g_norm_layer=g_norm_layer,
-        d_spec_norm=args.spec_norm
+        d_spec_norm=d_spec_norm
     )
     model.setup()
     model.print_networks(True)
