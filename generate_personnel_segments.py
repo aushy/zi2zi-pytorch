@@ -30,7 +30,7 @@ def generate_characters(
         # set up 
         model = Zi2ZiModel(
             input_nc=1,
-            embedding_num=40,
+            embedding_num=80,
             embedding_dim=128,
             Lconst_penalty=15,
             Lcategory_penalty=100,
