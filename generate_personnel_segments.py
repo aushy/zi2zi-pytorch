@@ -38,7 +38,7 @@ def generate_characters(
             gpu_ids=["cuda:0"],
             g_norm_layer=nn.InstanceNorm2d,
             d_spec_norm=False,
-            is_training=False
+            is_training=True
         )
         model.setup()
         model.print_networks(True)
