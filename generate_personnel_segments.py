@@ -54,15 +54,15 @@ def generate_characters(
     dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
     
     # inference
-    cnt = 0
     with torch.no_grad():
+        cnt = 0
         for batch in dataloader:
             model.set_input(batch[0], batch[2], batch[1])
             model.forward()
             tensor_to_plot = model.fake_B
             for label, image_tensor, ch in zip(batch[0], tensor_to_plot, src):
                 vutils.save_image(image_tensor, os.path.join(infer_dir, str(cnt) + '_' + ch + '.png'))
-            cnt += 1
+                cnt += 1
 
 if __name__ == '__main__':
     
