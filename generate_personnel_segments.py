@@ -37,7 +37,7 @@ def generate_characters(
             save_dir=checkpoint_dir,
             gpu_ids=["cuda:0"],
             g_norm_layer=nn.InstanceNorm2d,
-            d_spec_norm=False,
+            d_spec_norm=True,
             is_training=False
         )
         model.setup()
