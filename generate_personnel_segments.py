@@ -11,6 +11,7 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 import torchvision.utils as vutils
+import argparse
 
 
 def generate_characters(
@@ -65,5 +66,9 @@ def generate_characters(
                 cnt += 1
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Doc generation')
+    parser.add_argument('--characters', required=True, help='experiment directory, data, samples,checkpoints,etc')
+    args = parser.parse_args()
     
-    generate_characters("取締役")
+    generate_characters(args.characters)
