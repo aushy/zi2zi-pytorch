@@ -92,10 +92,10 @@ def main():
 
     if args.spec_norm:
         print("***\nUsing spectral normalization...\n***")
-        d_spec_norm = True
+        spec_norm = True
     else:
         print("***\nNOT using spectral normalization...\n***")
-        d_spec_norm = False
+        spec_norm = False
 
     model = Zi2ZiModel(
         input_nc=args.input_nc,
@@ -106,7 +106,7 @@ def main():
         save_dir=checkpoint_dir,
         gpu_ids=args.gpu_ids,
         g_norm_layer=g_norm_layer,
-        d_spec_norm=d_spec_norm,
+        spec_norm=spec_norm,
         is_training=False
     )
     model.setup()

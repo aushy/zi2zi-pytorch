@@ -29,10 +29,16 @@ class Discriminator(nn.Module):
         # padw = 1
         kw = 5
         padw = 2
-        sequence = [
-            nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw),
-            nn.LeakyReLU(0.2, True)
-        ]
+        if spec_norm:
+            sequence = [
+                spectral_norm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw)),
+                nn.LeakyReLU(0.2, True)
+            ]
+        else:
+            sequence = [
+                nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw),
+                nn.LeakyReLU(0.2, True)
+            ]
         nf_mult = 1
         nf_mult_prev = 1
         # in tf implement, there are only 3 conv2d layers with stride=2.
@@ -71,7 +77,10 @@ class Discriminator(nn.Module):
 
         # Maybe useful? Experiment need to be done later.
         # output 1 channel prediction map
-        sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
+        if spec_norm:
+            sequence += [spectral_norm(nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw))]
+        else:
+            sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
 
         self.model = nn.Sequential(*sequence)
         # final_channels = ndf * nf_mult

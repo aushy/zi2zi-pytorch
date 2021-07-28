@@ -3,13 +3,14 @@ import torch.nn as nn
 from torch.nn import init
 import functools
 from torch.optim import lr_scheduler
+from torch.nn.utils import spectral_norm
 
 
 class UNetGenerator(nn.Module):
     """Create a Unet-based generator"""
 
     def __init__(self, input_nc=3, output_nc=3, num_downs=8, ngf=64, embedding_num=40, embedding_dim=128,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False):
+                 norm_layer=nn.BatchNorm2d, use_dropout=False, spec_norm=False):
         """
         Construct a Unet generator
         Parameters:
@@ -26,20 +27,20 @@ class UNetGenerator(nn.Module):
         # construct unet structure
 
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
-                                             innermost=True, embedding_dim=embedding_dim)  # add the innermost layer
+                                             innermost=True, embedding_dim=embedding_dim, spec_norm=spec_norm)  # add the innermost layer
         for _ in range(num_downs - 5):  # add intermediate layers with ngf * 8 filters
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout)
+                                                 norm_layer=norm_layer, use_dropout=use_dropout, spec_norm=spec_norm)
         # gradually reduce the number of filters from ngf * 8 to ngf
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, spec_norm=spec_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, spec_norm=spec_norm)
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, spec_norm=spec_norm)
         self.model = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block,
                                              outermost=True,
-                                             norm_layer=norm_layer)  # add the outermost layer
+                                             norm_layer=norm_layer, spec_norm=spec_norm)  # add the outermost layer
         self.embedder = nn.Embedding(embedding_num, embedding_dim)
 
     def forward(self, x, style_or_label=None):
@@ -58,7 +59,7 @@ class UnetSkipConnectionBlock(nn.Module):
 
     def __init__(self, outer_nc, inner_nc, input_nc=None,
                  submodule=None, outermost=False, innermost=False, embedding_dim=128, norm_layer=nn.BatchNorm2d,
-                 use_dropout=False):
+                 use_dropout=False, spec_norm=False):
         """Construct a Unet submodule with skip connections.
         Parameters:
             outer_nc (int) -- the number of filters in the outer conv layer
@@ -90,22 +91,34 @@ class UnetSkipConnectionBlock(nn.Module):
             upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1)
-            down = [downconv]
-            up = [uprelu, upconv, nn.Tanh()]
+            if spec_norm:
+                down = [spectral_norm(downconv)]
+                up = [uprelu, spectral_norm(upconv), nn.Tanh()]
+            else:
+                down = [downconv]
+                up = [uprelu, upconv, nn.Tanh()]
 
         elif innermost:
             upconv = nn.ConvTranspose2d(inner_nc + embedding_dim, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1, bias=use_bias)
-            down = [downrelu, downconv]
-            up = [uprelu, upconv, upnorm]
+            if spec_norm:
+                down = [downrelu, spectral_norm(downconv)]
+                up = [uprelu, spectral_norm(upconv), upnorm]
+            else:
+                down = [downrelu, downconv]
+                up = [uprelu, upconv, upnorm]
 
         else:
             upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1, bias=use_bias)
-            down = [downrelu, downconv, downnorm]
-            up = [uprelu, upconv, upnorm]
+            if spec_norm:
+                down = [downrelu, spectral_norm(downconv), downnorm]
+                up = [uprelu, spectral_norm(upconv), upnorm]
+            else:
+                down = [downrelu, downconv, downnorm]
+                up = [uprelu, upconv, upnorm]
 
             if use_dropout:
                 up = up + [nn.Dropout(0.5)]

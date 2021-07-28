@@ -17,7 +17,7 @@ class Zi2ZiModel:
                  image_size=256, 
                  g_norm_layer=nn.BatchNorm2d, 
                  d_norm_layer=nn.BatchNorm2d,
-                 d_spec_norm=False):
+                 spec_norm=False):
 
         if is_training:
             self.use_dropout = True
@@ -44,7 +44,7 @@ class Zi2ZiModel:
 
         self.g_norm_layer = g_norm_layer
         self.d_norm_layer = d_norm_layer
-        self.d_spec_norm = d_spec_norm
+        self.spec_norm = spec_norm
 
     def setup(self):
 
@@ -55,7 +55,8 @@ class Zi2ZiModel:
             embedding_dim=self.embedding_dim,
             ngf=self.ngf,
             use_dropout=self.use_dropout,
-            norm_layer=self.g_norm_layer
+            norm_layer=self.g_norm_layer,
+            spec_norm=self.spec_norm
         )
         self.netD = Discriminator(
             input_nc=2 * self.input_nc,
@@ -63,7 +64,7 @@ class Zi2ZiModel:
             ndf=self.ndf,
             image_size=self.image_size,
             norm_layer=self.d_norm_layer,
-            spec_norm=self.d_spec_norm
+            spec_norm=self.spec_norm
         )
 
         init_net(self.netG, gpu_ids=self.gpu_ids)
