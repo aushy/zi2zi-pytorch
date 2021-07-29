@@ -44,7 +44,6 @@ def generate_characters(
         is_training=False
     )
     model.setup()
-    model.print_networks(True)
     model.load_networks(resume_iter)
 
     # data prep
