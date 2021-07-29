@@ -19,32 +19,11 @@ import math
 def generate_characters(
         src_txt, 
         infer_id,
-        infer_dir="./personnel_segments/pr/generated_characters", 
-        experiment_dir="./experiment_pr", 
+        model,
+        infer_dir="./personnel_segments/pr/generated_characters",
         src_font_path="./NotoSansCJKjp-Regular.otf",
-        resume_iter=1000, 
         label=9
     ):
-
-    # set up directories
-    checkpoint_dir = os.path.join(experiment_dir, "checkpoint")
-    os.makedirs(infer_dir, exist_ok=True)
-
-    # set up 
-    model = Zi2ZiModel(
-        input_nc=1,
-        embedding_num=80,
-        embedding_dim=128,
-        Lconst_penalty=15,
-        Lcategory_penalty=100,
-        save_dir=checkpoint_dir,
-        gpu_ids=["cuda:0"],
-        g_norm_layer=nn.InstanceNorm2d,
-        spec_norm=False,
-        is_training=False
-    )
-    model.setup()
-    model.load_networks(resume_iter)
 
     # data prep
     src = src_txt
@@ -130,11 +109,15 @@ def generate_personnel_blocks(
         save_dir,
         small_char_size=(20,20),
         large_char_size=(30,30),
-        personnel_entry_labels=("position", "family_name", "given_name")
+        personnel_entry_labels=("position", "family_name", "given_name"),
+        resume_iter=1000,
+        experiment_dir="./experiment_pr"
     ):
 
     # setup
     os.makedirs(save_dir, exist_ok=True)
+    os.makedirs(infer_dir, exist_ok=True)
+    checkpoint_dir = os.path.join(experiment_dir, "checkpoint")
 
     # read in personnel info
     personnel_positions_df = pd.read_csv(positions_path, header=0)
@@ -146,6 +129,23 @@ def generate_personnel_blocks(
         personnel_names_df, 
         doc="pr", sample_size=count
     )
+
+    # create model
+    model = Zi2ZiModel(
+        input_nc=1,
+        embedding_num=80,
+        embedding_dim=128,
+        Lconst_penalty=15,
+        Lcategory_penalty=100,
+        save_dir=checkpoint_dir,
+        gpu_ids=["cuda:0"],
+        g_norm_layer=nn.InstanceNorm2d,
+        spec_norm=False,
+        is_training=False
+    )
+    model.setup()
+    model.print_networks(True)
+    model.load_networks(resume_iter)
 
     # generate blocks
     for person_id, person_chars in enumerate(personnel_entries):
