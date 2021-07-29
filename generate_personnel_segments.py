@@ -157,6 +157,7 @@ def generate_personnel_blocks(
             # generate chars for block
             generate_characters(
                 chars, 
+                model=model,
                 infer_id=inference_id, 
                 infer_dir=infer_dir
             )
