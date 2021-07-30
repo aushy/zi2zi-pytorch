@@ -6,12 +6,13 @@ from torch.nn.utils import spectral_norm
 import functools
 from torch.optim import lr_scheduler
 import math
+from model.self_attention import SelfAttention
 
 
 class Discriminator(nn.Module):
     """Defines a PatchGAN discriminator"""
 
-    def __init__(self, input_nc, embedding_num, ndf=64, norm_layer=nn.BatchNorm2d, image_size=256, spec_norm=False):
+    def __init__(self, input_nc, embedding_num, ndf=64, norm_layer=nn.BatchNorm2d, image_size=256, spec_norm=False, attention=False):
         """Construct a PatchGAN discriminator
         Parameters:
             input_nc (int)  -- the number of channels in input images
@@ -59,6 +60,9 @@ class Discriminator(nn.Module):
                     nn.LeakyReLU(0.2, True)
                 ]
 
+        # self-attention 1
+        if attention:
+            sequence += [SelfAttention(ndf * nf_mult)]
 
         nf_mult_prev = nf_mult
         nf_mult = 8
@@ -74,6 +78,10 @@ class Discriminator(nn.Module):
                 norm_layer(ndf * nf_mult),
                 nn.LeakyReLU(0.2, True)
             ]
+
+        # self-attention 2
+        if attention:
+            sequence += [SelfAttention(ndf * nf_mult)]
 
         # Maybe useful? Experiment need to be done later.
         # output 1 channel prediction map

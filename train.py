@@ -35,7 +35,9 @@ parser.add_argument('--fine_tune', type=str, default=None,
 parser.add_argument('--inst_norm', action='store_true',
                     help='use conditional instance normalization in your model generator')
 parser.add_argument('--spec_norm', action='store_true',
-                    help='use spectral normalization in your model discriminator')
+                    help='use spectral normalization in your model generator and discriminator')
+parser.add_argument('--attention', action='store_true',
+                    help='use self-attention a la SAGAN in your model generator and discriminator')
 parser.add_argument('--sample_steps', type=int, default=10,
                     help='number of batches in between two samples are drawn from validation set')
 parser.add_argument('--checkpoint_steps', type=int, default=100,
@@ -83,6 +85,13 @@ def main():
     else:
         print("***\nNOT using spectral normalization...\n***")
         spec_norm = False
+
+    if args.attention:
+        print("***\nApplying self-attention...\n***")
+        attention = True
+    else:
+        print("***\nNOT Applying self-attention...\n***")
+        attention = False
 
     model = Zi2ZiModel(
         input_nc=args.input_nc,
