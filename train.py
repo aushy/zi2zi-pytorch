@@ -102,7 +102,8 @@ def main():
         save_dir=checkpoint_dir,
         gpu_ids=args.gpu_ids,
         g_norm_layer=g_norm_layer,
-        spec_norm=spec_norm
+        spec_norm=spec_norm,
+        attention=attention
     )
     model.setup()
     model.print_networks(True)
