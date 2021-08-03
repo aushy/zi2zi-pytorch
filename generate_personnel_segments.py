@@ -183,6 +183,7 @@ if __name__ == '__main__':
     parser.add_argument('--inference_dir', required=True, help="")
     parser.add_argument('--save_dir', required=True, help="")
     parser.add_argument('--experiment_dir', required=True, help="")
+    parser.add_argument('--checkpoint_iter', required=True, help="")
     args = parser.parse_args()
 
     generate_personnel_blocks(
@@ -191,5 +192,6 @@ if __name__ == '__main__':
         names_path=args.names_csv, 
         infer_dir=args.inference_dir,
         save_dir=args.save_dir,
-        experiment_dir=args.experiment_dir
+        experiment_dir=args.experiment_dir,
+        resume_iter=args.checkpoint_iter
     )
