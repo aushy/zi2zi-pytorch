@@ -182,6 +182,7 @@ if __name__ == '__main__':
     parser.add_argument('--names_csv', required=True, help="")
     parser.add_argument('--inference_dir', required=True, help="")
     parser.add_argument('--save_dir', required=True, help="")
+    parser.add_argument('--experiment_dir', required=True, help="")
     args = parser.parse_args()
 
     generate_personnel_blocks(
@@ -189,5 +190,6 @@ if __name__ == '__main__':
         positions_path=args.positions_csv, 
         names_path=args.names_csv, 
         infer_dir=args.inference_dir,
-        save_dir=args.save_dir
+        save_dir=args.save_dir,
+        experiment_dir=args.experiment_dir
     )
