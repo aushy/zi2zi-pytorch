@@ -142,7 +142,7 @@ def generate_personnel_blocks(
         save_dir=checkpoint_dir,
         gpu_ids=["cuda:0"],
         g_norm_layer=nn.InstanceNorm2d,
-        spec_norm=True,
+        spec_norm=False,
         attention=False,
         is_training=False
     )
