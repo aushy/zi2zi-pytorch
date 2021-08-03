@@ -14,6 +14,7 @@ import argparse
 import numpy as np
 import glob
 import math
+from tqdm import tqdm
 
 
 def generate_characters(
@@ -149,7 +150,7 @@ def generate_personnel_blocks(
     model.load_networks(resume_iter)
 
     # generate blocks
-    for person_id, person_chars in enumerate(personnel_entries):
+    for person_id, person_chars in tqdm(enumerate(personnel_entries)):
         for chars_label, chars in zip(personnel_entry_labels, person_chars):
 
             # create id
