@@ -142,7 +142,7 @@ def generate_personnel_blocks(
         g_norm_layer=nn.InstanceNorm2d,
         spec_norm=True,
         attention=True,
-        is_training=False
+        is_training=True
     )
     model.setup()
     model.print_networks(True)
