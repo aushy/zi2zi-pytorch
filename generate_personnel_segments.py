@@ -141,7 +141,7 @@ def generate_personnel_blocks(
         gpu_ids=["cuda:0"],
         g_norm_layer=nn.InstanceNorm2d,
         spec_norm=True,
-        attention=True,
+        attention=False,
         is_training=False
     )
     model.setup()
