@@ -19,7 +19,8 @@ class Zi2ZiModel:
             g_norm_layer=nn.BatchNorm2d, 
             d_norm_layer=nn.BatchNorm2d,
             spec_norm=False,
-            attention=False
+            attention=False,
+            num_downs=8
         ):
 
         if is_training:
@@ -51,6 +52,8 @@ class Zi2ZiModel:
 
         self.attention = attention
 
+        self.num_downs = num_downs
+
     def setup(self):
 
         self.netG = UNetGenerator(
@@ -62,7 +65,8 @@ class Zi2ZiModel:
             use_dropout=self.use_dropout,
             norm_layer=self.g_norm_layer,
             spec_norm=self.spec_norm,
-            attention=self.attention
+            attention=self.attention,
+            num_downs=self.num_downs
         )
         self.netD = Discriminator(
             input_nc=2 * self.input_nc,

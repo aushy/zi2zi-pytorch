@@ -49,6 +49,8 @@ parser.add_argument('--random_seed', type=int, default=777,
 parser.add_argument('--resume', type=int, default=None, help='resume from previous training')
 parser.add_argument('--input_nc', type=int, default=3,
                     help='number of input images channels')
+parser.add_argument('--num_downs', type=int, default=8, help='Number of downsampling layers in generator')
+
 
 def chkormakedir(path):
     if not os.path.isdir(path):
@@ -104,7 +106,8 @@ def main():
         g_norm_layer=g_norm_layer,
         spec_norm=spec_norm,
         attention=attention,
-        image_size=args.image_size
+        image_size=args.image_size,
+        num_downs=args.num_downs
     )
     model.setup()
     model.print_networks(True)
