@@ -103,7 +103,8 @@ def main():
         gpu_ids=args.gpu_ids,
         g_norm_layer=g_norm_layer,
         spec_norm=spec_norm,
-        attention=attention
+        attention=attention,
+        image_size=args.image_size
     )
     model.setup()
     model.print_networks(True)
