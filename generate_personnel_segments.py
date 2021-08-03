@@ -111,9 +111,7 @@ def generate_personnel_blocks(
         large_char_size=(30,30),
         personnel_entry_labels=("position", "family_name", "given_name"),
         resume_iter=1000,
-        experiment_dir="./experiment_pr",
-        spec_norm=False,
-        attention=False
+        experiment_dir="./experiment_pr"
     ):
 
     # setup
@@ -142,7 +140,7 @@ def generate_personnel_blocks(
         save_dir=checkpoint_dir,
         gpu_ids=["cuda:0"],
         g_norm_layer=nn.InstanceNorm2d,
-        spec_norm=False,
+        spec_norm=True,
         attention=False,
         is_training=False
     )
