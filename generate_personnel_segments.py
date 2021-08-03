@@ -141,7 +141,7 @@ def generate_personnel_blocks(
         gpu_ids=["cuda:0"],
         g_norm_layer=nn.InstanceNorm2d,
         spec_norm=True,
-        attention=False,
+        attention=True,
         is_training=False
     )
     model.setup()
@@ -184,7 +184,7 @@ if __name__ == '__main__':
     parser.add_argument('--inference_dir', required=True, help="")
     parser.add_argument('--save_dir', required=True, help="")
     parser.add_argument('--experiment_dir', required=True, help="")
-    parser.add_argument('--checkpoint_iter', required=True, help="")
+    parser.add_argument('--checkpoint_iter', type=int, required=True, help="")
     args = parser.parse_args()
 
     generate_personnel_blocks(
