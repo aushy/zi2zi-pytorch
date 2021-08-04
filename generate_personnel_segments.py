@@ -108,11 +108,13 @@ def generate_personnel_blocks(
         names_path, 
         infer_dir,
         save_dir,
-        small_char_size=(20,20),
-        large_char_size=(30,30),
+        small_char_size=20,
+        large_char_size=30,
         personnel_entry_labels=("position", "family_name", "given_name"),
         resume_iter=1000,
-        experiment_dir="./experiment_pr"
+        experiment_dir="./experiment_pr",
+        spec_norm=False,
+        attention=False
     ):
 
     # setup
@@ -141,8 +143,8 @@ def generate_personnel_blocks(
         save_dir=checkpoint_dir,
         gpu_ids=["cuda:0"],
         g_norm_layer=nn.InstanceNorm2d,
-        spec_norm=True,
-        attention=True,
+        spec_norm=spec_norm,
+        attention=attention,
         is_training=False
     )
     model.setup()
@@ -169,7 +171,7 @@ def generate_personnel_blocks(
             infer_char_paths = glob.glob(infer_pattern)
 
             # compose block image and save
-            char_size = small_char_size if chars_label == "position" else large_char_size
+            char_size = (small_char_size, small_char_size) if chars_label == "position" else (large_char_size, large_char_size)
             personnel_block_image = image_concat(infer_char_paths, char_size)
             personnel_block_image.save(os.path.join(save_dir, inference_id + ".png"))
 
@@ -186,6 +188,12 @@ if __name__ == '__main__':
     parser.add_argument('--save_dir', required=True, help="")
     parser.add_argument('--experiment_dir', required=True, help="")
     parser.add_argument('--checkpoint_iter', type=int, required=True, help="")
+    parser.add_argument('--sm_char_size', type=int, required=False, default=20, help="")
+    parser.add_argument('--lg_char_size', type=int, required=False, default=30, help="")
+    parser.add_argument('--spec_norm', action='store_true', help="")
+    parser.add_argument('--attention', action='store_true', help="")
+    parser.set_defaults(spec_norm=False)
+    parser.set_defaults(attention=False)
     args = parser.parse_args()
 
     generate_personnel_blocks(
@@ -195,5 +203,9 @@ if __name__ == '__main__':
         infer_dir=args.inference_dir,
         save_dir=args.save_dir,
         experiment_dir=args.experiment_dir,
-        resume_iter=args.checkpoint_iter
+        resume_iter=args.checkpoint_iter,
+        spec_norm=args.spec_norm,
+        attention=args.attention,
+        small_char_size=args.sm_char_size,
+        large_char_size=args.lg_char_size
     )
