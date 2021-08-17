@@ -1,6 +1,7 @@
 from data import DatasetFromObj
 from torch.utils.data import DataLoader
 import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 from model import Zi2ZiModel
 import os
 import sys
@@ -66,6 +67,8 @@ def main():
     chkormakedir(checkpoint_dir)
     sample_dir = os.path.join(args.experiment_dir, "sample")
     chkormakedir(sample_dir)
+
+    writer = SummaryWriter()
 
     start_time = time.time()
 
@@ -149,12 +152,20 @@ def main():
                     model.sample(val_batch, os.path.join(sample_dir, str(global_steps)))
                 print("Sample: sample step %d" % global_steps)
             global_steps += 1
+            writer.add_scalar("d_loss/train", model.d_loss.item(), global_steps)
+            writer.add_scalar("g_loss/train", model.g_loss.item(), global_steps)
+            writer.add_scalar("category_loss/train", category_loss, global_steps)
+            writer.add_scalar("cheat_loss/train", cheat_loss, global_steps)
+            writer.add_scalar("const_loss/train", const_loss, global_steps)
+            writer.add_scalar("l1_loss/train", l1_loss, global_steps)
         if (epoch + 1) % args.schedule == 0:
             model.update_lr()
+        writer.flush()
     for vbid, val_batch in enumerate(val_dataloader):
         model.sample(val_batch, os.path.join(sample_dir, str(global_steps)))
         print("Checkpoint: save checkpoint step %d" % global_steps)
     model.save_networks(global_steps)
+    writer.close()
 
 
 if __name__ == '__main__':
