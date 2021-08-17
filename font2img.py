@@ -107,21 +107,25 @@ def draw_font2font_example(ch, src_font, dst_font, canvas_size, x_offset, y_offs
 
 
 def draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offset, thresh=230):
-    src_img = draw_single_char(ch, src_font, canvas_size, x_offset, y_offset)
-    dst_img = dst_img.resize((canvas_size, canvas_size), Image.ANTIALIAS).convert('RGB')
-    example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
-    example_img.paste(dst_img, (0, 0))
-    example_img.paste(src_img, (canvas_size, 0))
-    # convert to gray img
-    example_img = example_img.convert('L')
-    # preprocess
-    contrast = ImageEnhance.Contrast(example_img) # Add contrast
-    example_img = contrast.enhance(2.0)
-    brightness = ImageEnhance.Brightness(example_img) # Add brightness
-    example_img = brightness.enhance(1.3)
-    # fn = lambda x : 255 if x > thresh else 0 # Binarize
-    # example_img = example_img.convert('L').point(fn, mode='1')
-    return example_img
+    try:
+        src_img = draw_single_char(ch, src_font, canvas_size, x_offset, y_offset)
+        dst_img = dst_img.resize((canvas_size, canvas_size), Image.ANTIALIAS).convert('RGB')
+        example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
+        example_img.paste(dst_img, (0, 0))
+        example_img.paste(src_img, (canvas_size, 0))
+        # convert to gray img
+        example_img = example_img.convert('L')
+        # preprocess
+        contrast = ImageEnhance.Contrast(example_img) # Add contrast
+        example_img = contrast.enhance(2.0)
+        brightness = ImageEnhance.Brightness(example_img) # Add brightness
+        example_img = brightness.enhance(1.3)
+        # fn = lambda x : 255 if x > thresh else 0 # Binarize
+        # example_img = example_img.convert('L').point(fn, mode='1')
+        return example_img
+    except Exception:
+        print(f"Failed to process: {ch}")
+        return None
 
 
 def draw_imgs2imgs_example(src_img, dst_img, canvas_size):
