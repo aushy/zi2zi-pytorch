@@ -172,7 +172,7 @@ def generate_personnel_blocks(
 
             # compose block image and save
             char_size = (small_char_size, small_char_size) if chars_label == "position" else (large_char_size, large_char_size)
-            personnel_block_image = image_concat(infer_char_paths, char_size)
+            personnel_block_image = image_concat(infer_char_paths, char_size, max_row_chars=len(infer_char_paths))
             personnel_block_image.save(os.path.join(save_dir, inference_id + ".png"))
 
 
