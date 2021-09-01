@@ -23,7 +23,7 @@ def generate_characters(
         model,
         infer_dir="./personnel_segments/pr/generated_characters",
         src_font_path="./NotoSansCJKjp-Regular.otf",
-        label=9
+        label=11
     ):
 
     # data prep
