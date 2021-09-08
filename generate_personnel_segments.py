@@ -23,7 +23,8 @@ def generate_characters(
         model,
         infer_dir="./personnel_segments/pr/generated_characters",
         src_font_path="./NotoSansCJKjp-Regular.otf",
-        label=11
+        label=11,
+        batch_size=32
     ):
 
     # data prep
@@ -37,8 +38,9 @@ def generate_characters(
     label_list = [label for _ in src]
     img_list = torch.cat(img_list, dim=0)
     label_list = torch.tensor(label_list)
-    dataset = TensorDataset(label_list, img_list, img_list)
-    dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
+    char_list = torch.tensor([c for c in src])
+    dataset = TensorDataset(label_list, img_list, img_list, char_list)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     
     # inference
     with torch.no_grad():
@@ -47,11 +49,10 @@ def generate_characters(
             model.set_input(batch[0], batch[2], batch[1])
             model.forward()
             tensor_to_plot = model.fake_B
-            for label, image_tensor in zip(batch[0], tensor_to_plot):
-                print(label)
+            for label, image_tensor, char in zip(batch[0], tensor_to_plot, batch[3]):
                 vutils.save_image(
                     image_tensor, 
-                    os.path.join(infer_dir, '_'.join([label, str(infer_id), str(cnt)]) + '.png')
+                    os.path.join(infer_dir, '_'.join([char, str(infer_id), str(cnt)]) + '.png')
                 )
                 cnt += 1
 
