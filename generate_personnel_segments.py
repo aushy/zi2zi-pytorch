@@ -48,6 +48,7 @@ def generate_characters(
             model.forward()
             tensor_to_plot = model.fake_B
             for label, image_tensor in zip(batch[0], tensor_to_plot):
+                print(label)
                 vutils.save_image(
                     image_tensor, 
                     os.path.join(infer_dir, '_'.join([label, str(infer_id), str(cnt)]) + '.png')
