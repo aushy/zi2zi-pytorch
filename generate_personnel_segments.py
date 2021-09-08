@@ -175,6 +175,7 @@ def generate_personnel_blocks(
             infer_pattern = os.path.join(infer_dir, inference_id + '*')
             infer_char_paths = glob.glob(infer_pattern)
             infer_char_paths_sorted = []
+            print(infer_char_paths)
             for ordered_c in chars:
                 ordered_cpath = [cpath for cpath in infer_char_paths if ordered_c == os.path.basename(cpath)[0]]
                 infer_char_paths_sorted.append(ordered_cpath[0])
