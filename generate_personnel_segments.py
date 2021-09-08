@@ -53,7 +53,7 @@ def generate_characters(
             for label, image_tensor, charord in zip(batch[0], tensor_to_plot, batch[3]):
                 vutils.save_image(
                     image_tensor, 
-                    os.path.join(infer_dir, '_'.join([chr(charord), str(infer_id), str(cnt)]) + '.png')
+                    os.path.join(infer_dir, '_'.join([str(infer_id), str(cnt), chr(charord)]) + '.png')
                 )
                 cnt += 1
 
@@ -175,9 +175,8 @@ def generate_personnel_blocks(
             infer_pattern = os.path.join(infer_dir, inference_id + '*')
             infer_char_paths = glob.glob(infer_pattern)
             infer_char_paths_sorted = []
-            print(infer_char_paths)
             for ordered_c in chars:
-                ordered_cpath = [cpath for cpath in infer_char_paths if ordered_c == os.path.basename(cpath)[0]]
+                ordered_cpath = [cpath for cpath in infer_char_paths if ordered_c == os.path.basename(cpath)[-5]]
                 infer_char_paths_sorted.append(ordered_cpath[0])
 
             # compose block image and save
