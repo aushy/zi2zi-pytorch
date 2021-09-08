@@ -1,3 +1,4 @@
+from torch.nn.modules import batchnorm
 from font2img import draw_single_char
 from model import Zi2ZiModel
 
@@ -38,7 +39,7 @@ def generate_characters(
     label_list = [label for _ in src]
     img_list = torch.cat(img_list, dim=0)
     label_list = torch.tensor(label_list)
-    char_list = torch.tensor([c for c in src])
+    char_list = torch.tensor([ord(c) for c in src])
     dataset = TensorDataset(label_list, img_list, img_list, char_list)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     
@@ -49,10 +50,10 @@ def generate_characters(
             model.set_input(batch[0], batch[2], batch[1])
             model.forward()
             tensor_to_plot = model.fake_B
-            for label, image_tensor, char in zip(batch[0], tensor_to_plot, batch[3]):
+            for label, image_tensor, charord in zip(batch[0], tensor_to_plot, batch[3]):
                 vutils.save_image(
                     image_tensor, 
-                    os.path.join(infer_dir, '_'.join([char, str(infer_id), str(cnt)]) + '.png')
+                    os.path.join(infer_dir, '_'.join([chr(charord), str(infer_id), str(cnt)]) + '.png')
                 )
                 cnt += 1
 
@@ -112,6 +113,7 @@ def generate_personnel_blocks(
         save_dir,
         small_char_size=20,
         large_char_size=30,
+        batch_size=32,
         personnel_entry_labels=("position", "family_name", "given_name"),
         resume_iter=1000,
         experiment_dir="./experiment_pr",
@@ -165,7 +167,8 @@ def generate_personnel_blocks(
                 chars, 
                 model=model,
                 infer_id=inference_id, 
-                infer_dir=infer_dir
+                infer_dir=infer_dir,
+                batch_size=batch_size
             )
 
             # get path info from gen chars
@@ -196,6 +199,7 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint_iter', type=int, required=True, help="")
     parser.add_argument('--sm_char_size', type=int, required=False, default=20, help="")
     parser.add_argument('--lg_char_size', type=int, required=False, default=30, help="")
+    parser.add_argument('--batch_size', type=int, required=False, default=32, help="")
     parser.add_argument('--spec_norm', action='store_true', help="")
     parser.add_argument('--attention', action='store_true', help="")
     parser.set_defaults(spec_norm=False)
@@ -213,5 +217,6 @@ if __name__ == '__main__':
         spec_norm=args.spec_norm,
         attention=args.attention,
         small_char_size=args.sm_char_size,
-        large_char_size=args.lg_char_size
+        large_char_size=args.lg_char_size,
+        batch_size=args.batch_size
     )
