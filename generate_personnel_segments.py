@@ -156,7 +156,7 @@ def generate_personnel_blocks(
         for chars_label, chars in zip(personnel_entry_labels, person_chars):
 
             # create id
-            inference_id = '_'.join([str(person_id), chars_label])
+            inference_id = '_'.join([str(person_id), chars_label, chars])
 
             # generate chars for block
             generate_characters(
