@@ -150,7 +150,7 @@ def font2font(src, dst, charset, char_size, canvas_size,
             break
         e = draw_font2font_example(c, src_font, dst_font, canvas_size, x_offset, y_offset, filter_hashes)
         if e:
-            e.save(os.path.join(sample_dir, "%d_%04d.jpg" % (label, count)))
+            e.save(os.path.join(sample_dir, "%d_%04d.png" % (label, count)))
             count += 1
             if count % 500 == 0:
                 print("processed %d chars" % count)
@@ -184,7 +184,7 @@ def font2imgs(src, dst, char_size, canvas_size,
         dst_img = Image.open(img_path)
         e = draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offset)
         if e:
-            e.save(os.path.join(sample_dir, "%d_%04d.jpg" % (label, count)))
+            e.save(os.path.join(sample_dir, "%d_%04d.png" % (label, count)))
             count += 1
 
 
@@ -233,7 +233,7 @@ def fonts2imgs(src_fonts_dir, dst, char_size, canvas_size,
         else:
             e = None
         if e:
-            e.save(os.path.join(sample_dir, "%d_%04d.jpg" % (label, count)))
+            e.save(os.path.join(sample_dir, "%d_%04d.png" % (label, count)))
             count += 1
 
 
@@ -289,7 +289,7 @@ def imgs2imgs(src, dst, canvas_size, sample_count, sample_dir):
         dst_img = Image.open(img_path)
         e = draw_imgs2imgs_example(src_img, dst_img, canvas_size)
         if e:
-            e.save(os.path.join(sample_dir, "%d_%04d.jpg" % (label, count)))
+            e.save(os.path.join(sample_dir, "%d_%04d.png" % (label, count)))
             count += 1
 
 
