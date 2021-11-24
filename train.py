@@ -78,14 +78,14 @@ def main():
     )
     model.setup()
     model.print_networks(True)
+    global_steps = 0
     if args.resume:
         model.load_networks(args.resume)
+        global_steps = args.resume + 1
 
     # val dataset load only once, no shuffle
     val_dataset = DatasetFromObj(os.path.join(data_dir, 'val.obj'), input_nc=args.input_nc)
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
-
-    global_steps = 0
 
     for epoch in range(args.epoch):
         # generate train dataset every epoch so that different styles of saved char imgs can be trained.
