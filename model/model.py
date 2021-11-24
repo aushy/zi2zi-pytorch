@@ -243,17 +243,24 @@ class Zi2ZiModel:
                 # net.eval()
         print('load model %d' % epoch)
 
-    def sample(self, batch, basename):
+    def sample(self, batch, basename, fake_only=False, names=None):
         chk_mkdir(basename)
         cnt = 0
         with torch.no_grad():
             self.set_input(batch[0], batch[2], batch[1])
             self.forward()
-            tensor_to_plot = torch.cat([self.fake_B, self.real_B], 3)
+            if fake_only:
+                tensor_to_plot = self.fake_B
+            else:
+                tensor_to_plot = torch.cat([self.fake_B, self.real_B], 3)
             for label, image_tensor in zip(batch[0], tensor_to_plot):
                 label_dir = os.path.join(basename, str(label.item()))
                 chk_mkdir(label_dir)
-                vutils.save_image(image_tensor, os.path.join(label_dir, str(cnt) + '.png'))
+                if names is not None:
+                    name = names[cnt]
+                else:
+                    name = str(cnt)
+                vutils.save_image(image_tensor, os.path.join(label_dir, name + '.png'))
                 cnt += 1
             # img = vutils.make_grid(tensor_to_plot)
             # vutils.save_image(tensor_to_plot, basename + "_construct.png")

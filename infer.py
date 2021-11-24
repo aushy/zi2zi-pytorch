@@ -13,6 +13,7 @@ import torchvision.transforms as transforms
 from torchvision.utils import save_image, make_grid
 import time
 from model.model import chk_mkdir
+from font2img import draw_single_char
 
 writer_dict = {
         '智永': 0, ' 隸書-趙之謙': 1, '張即之': 2, '張猛龍碑': 3, '柳公權': 4, '標楷體-手寫': 5, '歐陽詢-九成宮': 6,
@@ -52,14 +53,16 @@ parser.add_argument('--run_all_label', action='store_true')
 parser.add_argument('--label', type=int, default=0)
 parser.add_argument('--src_font', type=str, default='charset/gbk/方正新楷体_GBK(完整).TTF')
 parser.add_argument('--type_file', type=str, default='type/宋黑类字符集.txt')
+parser.add_argument('--fake_only', action='store_true')
+parser.add_argument('--use_unicode_name', action='store_true')
 
 
-def draw_single_char(ch, font, canvas_size):
-    img = Image.new("RGB", (canvas_size, canvas_size), (255, 255, 255))
-    draw = ImageDraw.Draw(img)
-    draw.text((0, 0), ch, (0, 0, 0), font=font)
-    img = img.convert('L')
-    return img
+# def draw_single_char(ch, font, canvas_size):
+#     img = Image.new("RGB", (canvas_size, canvas_size), (255, 255, 255))
+#     draw = ImageDraw.Draw(img)
+#     draw.text((0, 0), ch, (0, 0, 0), font=font)
+#     img = img.convert('L')
+#     return img
 
 
 def main():
@@ -91,6 +94,7 @@ def main():
     model.load_networks(args.resume)
 
     t1 = time.time()
+    unis = []
 
     if args.from_txt:
         src = args.src_txt
@@ -100,6 +104,7 @@ def main():
                 draw_single_char(ch, font, args.canvas_size)
             )
         ).unsqueeze(dim=0) for ch in src]
+        unis = [ord(ch) for ch in src]
         label_list = [args.label for _ in src]
 
         img_list = torch.cat(img_list, dim=0)
@@ -119,7 +124,7 @@ def main():
         fonts = [s.strip() for s in fp.readlines()]
     writer_dict = {v: k for k, v in enumerate(fonts)}
 
-    for batch in dataloader:
+    for batch_idx, batch in enumerate(dataloader):
         if args.run_all_label:
             # global writer_dict
             writer_dict_inv = {v: k for k, v in writer_dict.items()}
@@ -132,7 +137,10 @@ def main():
         else:
             # model.set_input(batch[0], batch[2], batch[1])
             # model.optimize_parameters()
-            model.sample(batch, infer_dir)
+            names = None
+            if args.use_unicode_name:
+                names = [f'uni{uni:04X}' for uni in unis[args.batch_size*batch_idx:args.batch_size*(batch_idx+1)]]
+            model.sample(batch, infer_dir, args.fake_only, names)
             global_steps += 1
 
     t_finish = time.time()
