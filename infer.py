@@ -46,7 +46,9 @@ parser.add_argument('--obj_path', type=str, default='./experiment/data/val.obj',
 parser.add_argument('--input_nc', type=int, default=1)
 
 parser.add_argument('--from_txt', action='store_true')
-parser.add_argument('--src_txt', type=str, default='大威天龍大羅法咒世尊地藏波若諸佛')
+group = parser.add_mutually_exclusive_group()
+group.add_argument('--src_txt', type=str, default='大威天龍大羅法咒世尊地藏波若諸佛')
+group.add_argument('--src_txt_file', type=str, default=None)
 parser.add_argument('--canvas_size', type=int, default=256)
 parser.add_argument('--char_size', type=int, default=256)
 parser.add_argument('--run_all_label', action='store_true')
@@ -97,7 +99,11 @@ def main():
     unis = []
 
     if args.from_txt:
-        src = args.src_txt
+        if args.src_txt_file is not None:
+            with open(args.src_txt_file) as fin:
+                src = ''.join([chr(int(line.strip(), 16)) for line in fin.readlines()])
+        else:
+            src = args.src_txt
         font = ImageFont.truetype(args.src_font, size=args.char_size)
         img_list = [transforms.Normalize(0.5, 0.5)(
             transforms.ToTensor()(
