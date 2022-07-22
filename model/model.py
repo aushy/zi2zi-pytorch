@@ -10,11 +10,18 @@ import torchvision.utils as vutils
 
 
 class Zi2ZiModel:
-    def __init__(self, input_nc=3, embedding_num=40, embedding_dim=128,
-                 ngf=64, ndf=64,
-                 Lconst_penalty=15, Lcategory_penalty=1, L1_penalty=100,
-                 schedule=10, lr=0.001, gpu_ids=None, save_dir='.', is_training=True,
-                 image_size=256):
+    def __init__(
+            self, input_nc=3, embedding_num=40, embedding_dim=128,
+            ngf=64, ndf=64,
+            Lconst_penalty=15, Lcategory_penalty=1, L1_penalty=100,
+            schedule=10, lr=0.001, gpu_ids=None, save_dir='.', is_training=True,
+            image_size=256, 
+            g_norm_layer=nn.BatchNorm2d, 
+            d_norm_layer=nn.BatchNorm2d,
+            spec_norm=False,
+            attention=False,
+            num_downs=8
+        ):
 
         if is_training:
             self.use_dropout = True
@@ -39,6 +46,14 @@ class Zi2ZiModel:
         self.is_training = is_training
         self.image_size = image_size
 
+        self.g_norm_layer = g_norm_layer
+        self.d_norm_layer = d_norm_layer
+        self.spec_norm = spec_norm
+
+        self.attention = attention
+
+        self.num_downs = num_downs
+
     def setup(self):
 
         self.netG = UNetGenerator(
@@ -47,13 +62,20 @@ class Zi2ZiModel:
             embedding_num=self.embedding_num,
             embedding_dim=self.embedding_dim,
             ngf=self.ngf,
-            use_dropout=self.use_dropout
+            use_dropout=self.use_dropout,
+            norm_layer=self.g_norm_layer,
+            spec_norm=self.spec_norm,
+            attention=self.attention,
+            num_downs=self.num_downs
         )
         self.netD = Discriminator(
             input_nc=2 * self.input_nc,
             embedding_num=self.embedding_num,
             ndf=self.ndf,
-            image_size=self.image_size
+            image_size=self.image_size,
+            norm_layer=self.d_norm_layer,
+            spec_norm=self.spec_norm,
+            attention=self.attention
         )
 
         init_net(self.netG, gpu_ids=self.gpu_ids)

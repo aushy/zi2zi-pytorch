@@ -13,6 +13,8 @@ import torchvision.transforms as transforms
 from torchvision.utils import save_image, make_grid
 import time
 from model.model import chk_mkdir
+import torch.nn as nn
+from font2img import draw_single_char
 
 writer_dict = {
         '智永': 0, ' 隸書-趙之謙': 1, '張即之': 2, '張猛龍碑': 3, '柳公權': 4, '標楷體-手寫': 5, '歐陽詢-九成宮': 6,
@@ -53,14 +55,19 @@ parser.add_argument('--label', type=int, default=0)
 parser.add_argument('--src_font', type=str, default='charset/gbk/方正新楷体_GBK(完整).TTF')
 parser.add_argument('--type_file', type=str, default='type/宋黑类字符集.txt')
 
+parser.add_argument('--inst_norm', action='store_true',
+                    help='use conditional instance normalization in your model')
+parser.add_argument('--spec_norm', action='store_true',
+                    help='use spectral normalization in your model discriminator')
 
+"""
 def draw_single_char(ch, font, canvas_size):
     img = Image.new("RGB", (canvas_size, canvas_size), (255, 255, 255))
     draw = ImageDraw.Draw(img)
     draw.text((0, 0), ch, (0, 0, 0), font=font)
     img = img.convert('L')
     return img
-
+"""
 
 def main():
     args = parser.parse_args()
@@ -76,6 +83,20 @@ def main():
 
     t0 = time.time()
 
+    if args.inst_norm:
+        print("***\nUsing instance normalization...\n***")
+        g_norm_layer = nn.InstanceNorm2d
+    else:
+        print("***\nUsing batch normalization...\n***")
+        g_norm_layer = nn.BatchNorm2d
+
+    if args.spec_norm:
+        print("***\nUsing spectral normalization...\n***")
+        spec_norm = True
+    else:
+        print("***\nNOT using spectral normalization...\n***")
+        spec_norm = False
+
     model = Zi2ZiModel(
         input_nc=args.input_nc,
         embedding_num=args.embedding_num,
@@ -84,6 +105,8 @@ def main():
         Lcategory_penalty=args.Lcategory_penalty,
         save_dir=checkpoint_dir,
         gpu_ids=args.gpu_ids,
+        g_norm_layer=g_norm_layer,
+        spec_norm=spec_norm,
         is_training=False
     )
     model.setup()
@@ -132,7 +155,11 @@ def main():
         else:
             # model.set_input(batch[0], batch[2], batch[1])
             # model.optimize_parameters()
-            model.sample(batch, infer_dir)
+            model.set_input(batch[0], batch[2], batch[1])
+            model.forward()
+            tensor_to_plot = torch.cat([model.fake_B, model.real_B], 3)
+            save_image(tensor_to_plot, os.path.join(infer_dir, "infer_{}".format(9) + "_construct.png"))
+            # model.sample(batch, infer_dir)
             global_steps += 1
 
     t_finish = time.time()

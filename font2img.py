@@ -4,15 +4,18 @@ import os
 import sys
 
 import argparse
+from typing import Type
 import numpy as np
 
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 import json
 import collections
 import re
 from fontTools.ttLib import TTFont
 from tqdm import tqdm
 import random
+from itertools import chain
+from fontTools.unicode import Unicode
 
 from torch import nn
 from torchvision import transforms
@@ -25,6 +28,13 @@ JP_CHARSET = None
 KR_CHARSET = None
 
 DEFAULT_CHARSET = "./charset/cjk.json"
+
+
+def get_unicode_coverage_from_ttf(ttf_path):
+    with TTFont(ttf_path, 0, allowVID=0, ignoreDecompileErrors=True, fontNumber=-1) as ttf:
+        chars = chain.from_iterable([y + (Unicode[y[0]],) for y in x.cmap.items()] for x in ttf["cmap"].tables)
+        chars_dec = [x[0] for x in chars]
+        return chars_dec, [chr(x) for x in chars_dec]
 
 
 def load_global_charset():
@@ -96,15 +106,26 @@ def draw_font2font_example(ch, src_font, dst_font, canvas_size, x_offset, y_offs
     return example_img
 
 
-def draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offset):
-    src_img = draw_single_char(ch, src_font, canvas_size, x_offset, y_offset)
-    dst_img = dst_img.resize((canvas_size, canvas_size), Image.ANTIALIAS).convert('RGB')
-    example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
-    example_img.paste(dst_img, (0, 0))
-    example_img.paste(src_img, (canvas_size, 0))
-    # convert to gray img
-    example_img = example_img.convert('L')
-    return example_img
+def draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offset, thresh=230):
+    try:
+        src_img = draw_single_char(ch, src_font, canvas_size, x_offset, y_offset)
+        dst_img = dst_img.resize((canvas_size, canvas_size), Image.ANTIALIAS).convert('RGB')
+        example_img = Image.new("RGB", (canvas_size * 2, canvas_size), (255, 255, 255))
+        example_img.paste(dst_img, (0, 0))
+        example_img.paste(src_img, (canvas_size, 0))
+        # convert to gray img
+        example_img = example_img.convert('L')
+        # preprocess
+        contrast = ImageEnhance.Contrast(example_img) # Add contrast
+        example_img = contrast.enhance(2.0)
+        brightness = ImageEnhance.Brightness(example_img) # Add brightness
+        example_img = brightness.enhance(1.3)
+        # fn = lambda x : 255 if x > thresh else 0 # Binarize
+        # example_img = example_img.convert('L').point(fn, mode='1')
+        return example_img
+    except Exception:
+        print(f"Failed to process: {ch}")
+        return None
 
 
 def draw_imgs2imgs_example(src_img, dst_img, canvas_size):
@@ -134,9 +155,19 @@ def filter_recurring_hash(charset, font, canvas_size, x_offset, y_offset):
 
 
 def font2font(src, dst, charset, char_size, canvas_size,
-             x_offset, y_offset, sample_count, sample_dir, label=0, filter_by_hash=True):
+             x_offset, y_offset, sample_count, sample_dir, label=0, filter_by_hash=True, 
+             custom_charset=False):
+    
     src_font = ImageFont.truetype(src, size=char_size)
     dst_font = ImageFont.truetype(dst, size=char_size)
+
+    if custom_charset:
+        # full coverage
+        kanji_unicode_range = range(int(0x4e00), int(0x9faf)+1)
+        _, dst_chars = get_unicode_coverage_from_ttf(dst)
+        dst_chars_kanji = [c for c in dst_chars if ((ord(c) in kanji_unicode_range) or (c in charset))]
+        print(f"Total kanji or charset in this font: {len(dst_chars_kanji)}")
+        charset = dst_chars_kanji
 
     filter_hashes = set()
     if filter_by_hash:
@@ -145,19 +176,19 @@ def font2font(src, dst, charset, char_size, canvas_size,
 
     count = 0
 
-    for c in charset:
+    for c in random.sample(charset, len(charset)):
         if count == sample_count:
             break
         e = draw_font2font_example(c, src_font, dst_font, canvas_size, x_offset, y_offset, filter_hashes)
         if e:
             e.save(os.path.join(sample_dir, "%d_%04d.jpg" % (label, count)))
             count += 1
-            if count % 500 == 0:
+            if count % 2500 == 0:
                 print("processed %d chars" % count)
 
 
 def font2imgs(src, dst, char_size, canvas_size,
-              x_offset, y_offset, sample_count, sample_dir):
+              x_offset, y_offset, sample_count, sample_dir, label):
     src_font = ImageFont.truetype(src, size=char_size)
 
     # -*- You should fill the target imgs' label_map -*-
@@ -171,15 +202,18 @@ def font2imgs(src, dst, char_size, canvas_size,
     count = 0
 
     # -*- You should fill the target imgs' regular expressions. -*-
-    pattern = re.compile('(.)~(.+)~(\d+)')
+    pattern = re.compile('(.)_(\d+)') # '(.)~(.+)~(\d+)'
 
-    for c in tqdm(os.listdir(dst)):
+    for c in tqdm([x for x in os.listdir(dst) if not x.startswith('.')]):
         if count == sample_count:
             break
         res = re.match(pattern, c)
-        ch = res[1]
-        writter = res[2]
-        label = writer_dict[writter]
+        try:
+            ch = res[1]
+        except TypeError:
+            print(c)
+        # writter = res[2]
+        # label = writer_dict[writter]
         img_path = os.path.join(dst, c)
         dst_img = Image.open(img_path)
         e = draw_font2imgs_example(ch, src_font, dst_img, canvas_size, x_offset, y_offset)
@@ -292,10 +326,11 @@ def imgs2imgs(src, dst, canvas_size, sample_count, sample_dir):
             e.save(os.path.join(sample_dir, "%d_%04d.jpg" % (label, count)))
             count += 1
 
+if __name__ == "__main__":
 
-load_global_charset()
-parser = argparse.ArgumentParser()
-parser.add_argument('--mode', type=str, choices=['imgs2imgs', 'font2imgs', 'font2font', 'fonts2imgs'], required=True,
+    load_global_charset()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', type=str, choices=['imgs2imgs', 'font2imgs', 'font2font', 'fonts2imgs'], required=True,
                     help='generate mode.\n'
                          'use --src_imgs and --dst_imgs for imgs2imgs mode.\n'
                          'use --src_font and --dst_imgs for font2imgs mode.\n'
@@ -303,27 +338,26 @@ parser.add_argument('--mode', type=str, choices=['imgs2imgs', 'font2imgs', 'font
                          'use --src_fonts_dir and --dst_imgs for fonts2imgs mode.\n'
                          'No imgs2font mode.'
                     )
-parser.add_argument('--src_font', type=str, default=None, help='path of the source font')
-parser.add_argument('--src_fonts_dir', type=str, default=None, help='path of the source fonts')
-parser.add_argument('--src_imgs', type=str, default=None, help='path of the source imgs')
-parser.add_argument('--dst_font', type=str, default=None, help='path of the target font')
-parser.add_argument('--dst_imgs', type=str, default=None, help='path of the target imgs')
+    parser.add_argument('--src_font', type=str, default=None, help='path of the source font')
+    parser.add_argument('--src_fonts_dir', type=str, default=None, help='path of the source fonts')
+    parser.add_argument('--src_imgs', type=str, default=None, help='path of the source imgs')
+    parser.add_argument('--dst_font', type=str, default=None, help='path of the target font')
+    parser.add_argument('--dst_imgs', type=str, default=None, help='path of the target imgs')
 
-parser.add_argument('--filter', default=False, action='store_true', help='filter recurring characters')
-parser.add_argument('--charset', type=str, default='CN',
+    parser.add_argument('--filter', default=False, action='store_true', help='filter recurring characters')
+    parser.add_argument('--charset', type=str, default='CN',
                     help='charset, can be either: CN, JP, KR or a one line file. ONLY VALID IN font2font mode.')
-parser.add_argument('--shuffle', default=False, action='store_true', help='shuffle a charset before processings')
-parser.add_argument('--char_size', type=int, default=256, help='character size')
-parser.add_argument('--canvas_size', type=int, default=256, help='canvas size')
-parser.add_argument('--x_offset', type=int, default=0, help='x offset')
-parser.add_argument('--y_offset', type=int, default=0, help='y_offset')
-parser.add_argument('--sample_count', type=int, default=5000, help='number of characters to draw')
-parser.add_argument('--sample_dir', type=str, default='sample_dir', help='directory to save examples')
-parser.add_argument('--label', type=int, default=0, help='label as the prefix of examples')
+    parser.add_argument('--shuffle', default=False, action='store_true', help='shuffle a charset before processings')
+    parser.add_argument('--char_size', type=int, default=256, help='character size')
+    parser.add_argument('--canvas_size', type=int, default=256, help='canvas size')
+    parser.add_argument('--x_offset', type=int, default=0, help='x offset')
+    parser.add_argument('--y_offset', type=int, default=0, help='y_offset')
+    parser.add_argument('--sample_count', type=int, default=5000, help='number of characters to draw')
+    parser.add_argument('--sample_dir', type=str, default='sample_dir', help='directory to save examples')
+    parser.add_argument('--label', type=int, default=0, help='label as the prefix of examples')
 
-args = parser.parse_args()
+    args = parser.parse_args()
 
-if __name__ == "__main__":
     if not os.path.isdir(args.sample_dir):
         os.mkdir(args.sample_dir)
     if args.mode == 'font2font':
@@ -331,19 +365,23 @@ if __name__ == "__main__":
             raise ValueError('src_font and dst_font are required.')
         if args.charset in ['CN', 'JP', 'KR', 'CN_T']:
             charset = locals().get("%s_CHARSET" % args.charset)
+            custom_charset = False
         else:
-            charset = list(open(args.charset, encoding='utf-8').readline().strip())
+            with open(args.charset) as f:
+                charset = f.read().split()
+            custom_charset = True
         if args.shuffle:
             np.random.shuffle(charset)
         font2font(args.src_font, args.dst_font, charset, args.char_size,
                   args.canvas_size, args.x_offset, args.y_offset,
-                  args.sample_count, args.sample_dir, args.label, args.filter)
+                  args.sample_count, args.sample_dir, args.label, args.filter, 
+                  custom_charset)
     elif args.mode == 'font2imgs':
         if args.src_font is None or args.dst_imgs is None:
             raise ValueError('src_font and dst_imgs are required.')
         font2imgs(args.src_font, args.dst_imgs, args.char_size,
                   args.canvas_size, args.x_offset, args.y_offset,
-                  args.sample_count, args.sample_dir)
+                  args.sample_count, args.sample_dir, args.label)
     elif args.mode == 'fonts2imgs':
         if args.src_fonts_dir is None or args.dst_imgs is None:
             raise ValueError('src_font and dst_imgs are required.')

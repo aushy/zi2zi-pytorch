@@ -1,5 +1,7 @@
 from data import DatasetFromObj
 from torch.utils.data import DataLoader
+import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 from model import Zi2ZiModel
 import os
 import sys
@@ -32,7 +34,11 @@ parser.add_argument('--freeze_encoder', action='store_true',
 parser.add_argument('--fine_tune', type=str, default=None,
                     help='specific labels id to be fine tuned')
 parser.add_argument('--inst_norm', action='store_true',
-                    help='use conditional instance normalization in your model')
+                    help='use conditional instance normalization in your model generator')
+parser.add_argument('--spec_norm', action='store_true',
+                    help='use spectral normalization in your model generator and discriminator')
+parser.add_argument('--attention', action='store_true',
+                    help='use self-attention a la SAGAN in your model generator and discriminator')
 parser.add_argument('--sample_steps', type=int, default=10,
                     help='number of batches in between two samples are drawn from validation set')
 parser.add_argument('--checkpoint_steps', type=int, default=100,
@@ -44,6 +50,8 @@ parser.add_argument('--random_seed', type=int, default=777,
 parser.add_argument('--resume', type=int, default=None, help='resume from previous training')
 parser.add_argument('--input_nc', type=int, default=3,
                     help='number of input images channels')
+parser.add_argument('--num_downs', type=int, default=8, help='Number of downsampling layers in generator')
+
 
 def chkormakedir(path):
     if not os.path.isdir(path):
@@ -60,12 +68,35 @@ def main():
     sample_dir = os.path.join(args.experiment_dir, "sample")
     chkormakedir(sample_dir)
 
+    writer = SummaryWriter()
+
     start_time = time.time()
 
     # train_dataset = DatasetFromObj(os.path.join(data_dir, 'train.obj'),
     #                                augment=True, bold=True, rotate=True, blur=True)
     # val_dataset = DatasetFromObj(os.path.join(data_dir, 'val.obj'))
     # dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+
+    if args.inst_norm:
+        print("***\nGenerator using instance normalization...\n***")
+        g_norm_layer = nn.InstanceNorm2d
+    else:
+        print("***\nGenerator using batch normalization...\n***")
+        g_norm_layer = nn.BatchNorm2d
+
+    if args.spec_norm:
+        print("***\nUsing spectral normalization...\n***")
+        spec_norm = True
+    else:
+        print("***\nNOT using spectral normalization...\n***")
+        spec_norm = False
+
+    if args.attention:
+        print("***\nApplying self-attention...\n***")
+        attention = True
+    else:
+        print("***\nNOT Applying self-attention...\n***")
+        attention = False
 
     model = Zi2ZiModel(
         input_nc=args.input_nc,
@@ -74,7 +105,12 @@ def main():
         Lconst_penalty=args.Lconst_penalty,
         Lcategory_penalty=args.Lcategory_penalty,
         save_dir=checkpoint_dir,
-        gpu_ids=args.gpu_ids
+        gpu_ids=args.gpu_ids,
+        g_norm_layer=g_norm_layer,
+        spec_norm=spec_norm,
+        attention=attention,
+        image_size=args.image_size,
+        num_downs=args.num_downs
     )
     model.setup()
     model.print_networks(True)
@@ -116,12 +152,20 @@ def main():
                     model.sample(val_batch, os.path.join(sample_dir, str(global_steps)))
                 print("Sample: sample step %d" % global_steps)
             global_steps += 1
+            writer.add_scalar("d_loss/train", model.d_loss.item(), global_steps)
+            writer.add_scalar("g_loss/train", model.g_loss.item(), global_steps)
+            writer.add_scalar("category_loss/train", category_loss, global_steps)
+            writer.add_scalar("cheat_loss/train", cheat_loss, global_steps)
+            writer.add_scalar("const_loss/train", const_loss, global_steps)
+            writer.add_scalar("l1_loss/train", l1_loss, global_steps)
         if (epoch + 1) % args.schedule == 0:
             model.update_lr()
+        writer.flush()
     for vbid, val_batch in enumerate(val_dataloader):
         model.sample(val_batch, os.path.join(sample_dir, str(global_steps)))
         print("Checkpoint: save checkpoint step %d" % global_steps)
     model.save_networks(global_steps)
+    writer.close()
 
 
 if __name__ == '__main__':

@@ -1,15 +1,18 @@
 import torch
+from torch.functional import norm
 import torch.nn as nn
 from torch.nn import init
+from torch.nn.utils import spectral_norm
 import functools
 from torch.optim import lr_scheduler
 import math
+from model.self_attention import SelfAttention
 
 
 class Discriminator(nn.Module):
     """Defines a PatchGAN discriminator"""
 
-    def __init__(self, input_nc, embedding_num, ndf=64, norm_layer=nn.BatchNorm2d, image_size=256):
+    def __init__(self, input_nc, embedding_num, ndf=64, norm_layer=nn.BatchNorm2d, image_size=256, spec_norm=False, attention=False):
         """Construct a PatchGAN discriminator
         Parameters:
             input_nc (int)  -- the number of channels in input images
@@ -27,10 +30,16 @@ class Discriminator(nn.Module):
         # padw = 1
         kw = 5
         padw = 2
-        sequence = [
-            nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw),
-            nn.LeakyReLU(0.2, True)
-        ]
+        if spec_norm:
+            sequence = [
+                spectral_norm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw)),
+                nn.LeakyReLU(0.2, True)
+            ]
+        else:
+            sequence = [
+                nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw),
+                nn.LeakyReLU(0.2, True)
+            ]
         nf_mult = 1
         nf_mult_prev = 1
         # in tf implement, there are only 3 conv2d layers with stride=2.
@@ -38,23 +47,48 @@ class Discriminator(nn.Module):
         for n in range(1, 3):  # gradually increase the number of filters
             nf_mult_prev = nf_mult
             nf_mult = min(2 ** n, 8)
+            if spec_norm:
+                sequence += [
+                    spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw, bias=use_bias)),
+                    norm_layer(ndf * nf_mult),
+                    nn.LeakyReLU(0.2, True)
+                ]
+            else:
+                sequence += [
+                    nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw, bias=use_bias),
+                    norm_layer(ndf * nf_mult),
+                    nn.LeakyReLU(0.2, True)
+                ]
+
+        # self-attention 1
+        if attention:
+            sequence += [SelfAttention(ndf * nf_mult)]
+
+        nf_mult_prev = nf_mult
+        nf_mult = 8
+        if spec_norm:
             sequence += [
-                nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw, bias=use_bias),
+                spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias)),
+                norm_layer(ndf * nf_mult),
+                nn.LeakyReLU(0.2, True)
+            ]
+        else:
+            sequence += [
+                nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias),
                 norm_layer(ndf * nf_mult),
                 nn.LeakyReLU(0.2, True)
             ]
 
-        nf_mult_prev = nf_mult
-        nf_mult = 8
-        sequence += [
-            nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias),
-            norm_layer(ndf * nf_mult),
-            nn.LeakyReLU(0.2, True)
-        ]
+        # self-attention 2
+        if attention:
+            sequence += [SelfAttention(ndf * nf_mult)]
 
         # Maybe useful? Experiment need to be done later.
         # output 1 channel prediction map
-        sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
+        if spec_norm:
+            sequence += [spectral_norm(nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw))]
+        else:
+            sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
 
         self.model = nn.Sequential(*sequence)
         # final_channels = ndf * nf_mult
